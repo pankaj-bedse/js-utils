@@ -1,4 +1,4 @@
-import { Collection } from "./interfaces/Collection";
+import { Collection, HasEquals } from "./interfaces/Collection";
 import { Iterator } from "./interfaces/Iterator";
 
 export abstract class AbstractCollection<T> implements Collection<T> {
@@ -114,7 +114,20 @@ export abstract class AbstractCollection<T> implements Collection<T> {
   }
 
   public equals(a: T, b: T): boolean {
-    return (a.hasOwnProperty('equals') && a["equals"](b) || a === b);
+
+    // Check if 'a' is an object and has a callable equals method
+    const hasEqualsMethod = (
+      a !== null && 
+      typeof a === 'object' && 
+      'equals' in a &&
+      typeof (a as HasEquals<T>).equals === 'function'
+    );
+    
+    if (hasEqualsMethod) {
+      return (a as HasEquals<T>).equals!(b) || a === b;
+    }
+    
+    return a === b;
   }
 
   public toString(): string {
@@ -135,9 +148,17 @@ export abstract class AbstractCollection<T> implements Collection<T> {
       }
       if (!it.hasNext()) {
         s += ']'
-        return s;
+        break;
       }
       s += ', ';
     }
+    return s;
+  }
+
+  // Type guard to check if 'e' has equals method
+  protected hasEquals(value: unknown): value is HasEquals<T> & T {
+      return (value instanceof Object && 
+      'equals' in value &&
+      typeof (value as any).equals === 'function');
   }
 }

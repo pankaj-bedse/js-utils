@@ -103,7 +103,7 @@ export interface Deque<T> extends Queue<T> {
      *
      * @return the head of this deque, or {@code null} if this deque is empty
      */
-    pollFirst(): T;
+    pollFirst(): T | null;
 
     /**
      * Retrieves and removes the last element of this deque,
@@ -111,7 +111,7 @@ export interface Deque<T> extends Queue<T> {
      *
      * @return the tail of this deque, or {@code null} if this deque is empty
      */
-    pollLast(): T;
+    pollLast(): T | null;
 
     /**
      * Retrieves, but does not remove, the first element of this deque.

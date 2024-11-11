@@ -20,7 +20,7 @@ export interface Queue<T> {
    * @return the head of this queue, or {@code null} if this queue is empty
    */
 
-  poll(): T
+  poll(): T | null
 
   /**
    * Retrieves, but does not remove, the head of this queue.  This method
@@ -38,5 +38,5 @@ export interface Queue<T> {
    *
    * @return the head of this queue, or {@code null} if this queue is empty
    */
-  peek(): T
+  peek(): T | null
 }
