@@ -1,5 +1,5 @@
 import { AbstractList } from "./AbstractList";
-import { Collection } from "./interfaces/Collection";
+import { Collection, HasEquals } from "./interfaces/Collection";
 import { Deque } from "./interfaces/Deque";
 import { Iterator } from "./interfaces/Iterator";
 import { ComparatorFun, List } from "./interfaces/List";
@@ -44,7 +44,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
     if (!this.head) {
       this.head = item;
     } else {
-      this.tail.next = item;
+      this.tail!.next = item;
     }
     this.length++;
     this.tail = item;
@@ -133,9 +133,10 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
       this.head = null;
     } else {
       const prev = this.tail.prev;
-      this.tail.prev.next = null;
+      // this.tail.prev.next = null;
       this.tail.prev = null;
       this.tail = prev;
+      prev!.next = null;
     }
     return item;
   }
@@ -150,15 +151,15 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
     return true;
   }
 
-  public pollFirst(): T {
+  public pollFirst(): T | null {
     return this.head ? this.removeFirst() : null
   }
 
-  public pollLast(): T {
+  public pollLast(): T | null {
     return this.tail ? this.removeLast() : null
   }
 
-  public poll(): T {
+  public poll(): T | null {
     if (this.head) {
       return this.removeFirst();
     }
@@ -172,7 +173,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
     return this.peekFirst();
   }
 
-  public peek(): T {
+  public peek(): T | null {
     return this.head ? this.peekFirst() : null;
   }
 
@@ -190,9 +191,9 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
     }
     let i = 0, node = this.head;
     while (i < index) {
-      node = node.next;
+      node = node!.next;
     }
-    return node.item;
+    return node!.item;
   }
 
   public addBefore(a: Node<T>, e: T): void {
@@ -203,7 +204,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
     } else {
       n.next = a;
       n.prev = a.prev;
-      a.prev.next = n;
+      a.prev!.next = n;
       a.prev = n;
     }
     this.length++;
@@ -235,11 +236,11 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
       }
     } else if (n === this.tail) {
       this.tail = n.prev;
-      this.tail.next = null;
+      this.tail!.next = null;
       n.prev = null;
     } else {
-      n.prev.next = n.next;
-      n.next.prev = n.prev;
+      n.prev!.next = n.next;
+      n.next!.prev = n.prev;
       n.next = null;
       n.prev = null
     }
@@ -263,7 +264,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
         node = node.next;
         i++;
       }
-      this.addAfter(node, element);
+      this.addAfter(node!, element);
     }
   }
 
@@ -281,7 +282,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
         node = node.next;
         i++;
       }
-      return this.removeNode(node);
+      return this.removeNode(node!);
     }
   }
 
@@ -308,19 +309,19 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
     return removed;
   }
 
-  private split(head) {
-    let fast = head, slow = head;
+  private split(head: Node<T>): Node<T> | null {
+    let fast = head, slow:Node<T> | null = head;
     while (fast.next !== null && fast.next.next !== null) {
       fast = fast.next.next;
-      slow = slow.next;
+      slow = slow?.next ?? null;
     }
-    const temp = slow.next;
-    slow.next = null;
+    const temp = slow!.next;
+    slow!.next = null;
 
     return temp;
   }
 
-  private mergeSort(node, c) {
+  private mergeSort(node: Node<T> | null, c: ComparatorFun<T>): Node<T> | null {
     if (node === null || node.next === null) {
       return node;
     }
@@ -333,7 +334,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
 
   }
 
-  private merge(first, second, c) {
+  private merge(first: Node<T> | null, second: Node<T> | null, c: ComparatorFun<T>): Node<T> | null {
     if (first === null) {
       return second;
     }
@@ -342,12 +343,16 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
     }
     if (c(first.item, second.item) < 0) {
       first.next = this.merge(first.next, second, c);
-      first.next.prev = first;
+      if (first.next) {
+        first.next.prev = first;
+      }
       first.prev = null;
       return first;
     } else {
       second.next = this.merge(first, second.next, c);
-      second.next.prev = second;
+      if (second.next) {
+        second.next.prev = second;
+      }
       second.prev = null;
       return second;
     }
@@ -355,7 +360,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
 
   private updateTailRef() {
     let tail = this.head;
-    while (tail.next !== null) {
+    while (tail !== null && tail.next !== null) {
       tail = tail.next;
     }
     this.tail = tail;
@@ -383,7 +388,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
 
   public iterator(): Iterator<T> {
 
-    let s = this.head, prev, current: Node<T>;
+    let s = this.head, prev, current: Node<T> | null;
     return ({
       next: () => {
         // console.log(s, this.size());
@@ -404,13 +409,18 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
         if (!s) {
           throw 'Illegal operation';
         }
-        const temp = current.next;
-        this.removeNode(current);
+        const temp = current!.next;
+        this.removeNode(current!);
 
         current = temp;
         return true;
       },
-      current: () => current.item
+      current: () => {
+        if (!current) {
+          throw 'No current item';
+        }
+        return current.item;
+      }
     });
   }
 

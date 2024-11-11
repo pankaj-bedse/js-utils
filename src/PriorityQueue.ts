@@ -1,5 +1,5 @@
 import { AbstractCollection } from "./AbstractCollection";
-import { Collection } from "./interfaces/Collection";
+import { Collection, HasEquals } from "./interfaces/Collection";
 import { Queue } from './interfaces/Queue';
 import { Comparator } from './Comparator';
 import { Iterator } from "./interfaces/Iterator";
@@ -9,7 +9,7 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
   private length: number = 0;
   private maxLength: number = 50;
   private comparator: Comparator<T> = new Comparator<T>();
-  private queue: T[] = [];
+  private queue: (T | null)[] = [];
 
   constructor(size?: number, comparator?: Comparator<T>) {
     super();
@@ -47,7 +47,7 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
   private siftUp(k: number, x:T): void {
     while (k > 0) {
             let parent = (k - 1) >>> 1;
-            let e:T = this.queue[parent];
+            let e:T = this.queue[parent] as T;
       if (this.comparator.compare(x, e) >= 0)
         break;
       this.queue[k] = e;
@@ -68,12 +68,12 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
     let half = this.length >>> 1;
     while (k < half) {
             let child = (k << 1) + 1;
-            let c: T = this.queue[child];
+            let c: T | null = this.queue[child];
             let right = child + 1;
       if (right < this.length &&
-        this.comparator.compare(c, this.queue[right]) > 0)
+        this.queue[right] !== null && this.comparator.compare(c as T, this.queue[right] as T) > 0)
         c = this.queue[child = right];
-      if (this.comparator.compare(x, c) <= 0)
+      if (c !== null && this.comparator.compare(x, c) <= 0)
         break;
       this.queue[k] = c;
       k = child;
@@ -83,7 +83,7 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
 
   private heapify():void {
     for (let i = (this.length >>> 1) - 1; i >= 0; i--)
-    this.siftDown(i, this.queue[i]);
+    this.siftDown(i, this.queue[i] as T);
   }
 
 
@@ -106,11 +106,11 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
     return this.offer(e);
   }
 
-  public peek(): T {
+  public peek(): T | null {
     return (this.length > 0) ? this.queue[0] : null;
   }
 
-  public poll(): T {
+  public poll(): T | null {
     if (this.length === 0) {
       return null;
     }
@@ -120,13 +120,16 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
     let x = this.queue[s];
     this.queue[s] = null;
     if (s != 0)
-      this.siftDown(0, x);
+      this.siftDown(0, x as T);
 
     return result;
   }
 
-  public element(): T {
-    return this.peek();
+  public element(): T{
+    if (this.length === 0) {
+      throw 'NoSuchElement';
+    }
+    return this.peek() as T;
   }
 
   public remove(o: T): boolean {
@@ -139,7 +142,7 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
   }
 
   public removeIf(filter: Function): boolean {
-    const removeItemIndexs = [];
+    const removeItemIndexs: number[] = [];
     this.queue.forEach((item, index) => {
       if (filter(item)) {
         removeItemIndexs.push(index);
@@ -169,7 +172,7 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
       // last element make it null
       this.queue[i] = null;
     } else {
-      let moved: T = this.queue[i];
+      let moved: T = this.queue[i] as T;
       this.queue[s] = null;
       this.siftDown(i, moved);
       if (this.queue[i] == moved) {
@@ -185,7 +188,8 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
   private indexOf(o:T): number {
     if (o != null) {
       for (let i = 0; i < this.length; i++)
-        if (o.hasOwnProperty('equals') && o["equals"](this.queue[i]) ||
+        
+        if (this.hasEquals(o) && this.queue[i] !== null && o.equals!(this.queue[i] as T) ||
           this.queue[i] === o)
         return i;
     }
@@ -215,7 +219,11 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
     return ({
       next: () => {
         if (s < this.queue.length) {
-          current = this.queue[s++];
+          const item = this.queue[s++];
+          if (item === null) {
+            throw 'Unexpected null value';
+          }
+          current = item;
 
           return current;
         }

@@ -1,5 +1,8 @@
 import { Iterator } from "./Iterator"
 
+// Create a type guard to check if 'a' has an equals method
+export  type HasEquals<T> = { equals?(other: T): boolean };
+
 export interface Collection<T> { // extends IterableIterator<T>
   /**
     * Returns the number of elements in this collection.  If this collection

@@ -1,8 +1,9 @@
 import { AbstractCollection } from "./AbstractCollection";
+import { HasEquals } from "./interfaces/Collection";
 import { Iterator } from "./interfaces/Iterator";
 import { ComparatorFun, List } from "./interfaces/List";
 
-export abstract class AbstractList<T extends { equals?: (T) => boolean }> extends AbstractCollection<T> implements List<T> {
+export abstract class AbstractList<T> extends AbstractCollection<T> implements List<T> {
   public add(e: T): boolean {
     this.addAtIndex(this.size(), e);
     return true;
@@ -62,12 +63,18 @@ export abstract class AbstractList<T extends { equals?: (T) => boolean }> extend
     while (it.hasNext()) {
       index++;
       const e = it.next();
-      if (e.hasOwnProperty('equals') && e.equals(o) ||
-        e === o
-      ) {
+      
+      if (this.hasEquals(e) && e.equals!(o) || e === o) {
         return index;
       }
     }
+      
+    //   if ((e instanceof Object && e.hasOwnProperty('equals') && typeof e.equals === 'function'  && e.equals(o)) ||
+    //     e === o
+    //   ) {
+    //     return index;
+    //   }
+    // }
     return -1;
   }
 
@@ -77,9 +84,8 @@ export abstract class AbstractList<T extends { equals?: (T) => boolean }> extend
     while (it.hasNext()) {
       c++;
       const e = it.next();
-      if (e.hasOwnProperty('equals') && e.equals(o) ||
-        e === o
-      ) {
+      
+      if (this.hasEquals(e) && e.equals!(o) || e === o) {
         index = c;
       }
     }
@@ -90,10 +96,10 @@ export abstract class AbstractList<T extends { equals?: (T) => boolean }> extend
     if (fromIndex < 0) {
       throw 'Index out of bound';
     }
-    if (toIndex > this.size()) {
+    if (toIndex !== undefined && toIndex > this.size()) {
       throw 'Index out of bound';
     }
-    if (fromIndex > toIndex) {
+    if (toIndex !== undefined && fromIndex > toIndex) {
       throw 'Illegal arguments: Start can not be after end';
     }
   }
