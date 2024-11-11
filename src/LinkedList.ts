@@ -44,6 +44,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
     if (!this.head) {
       this.head = item;
     } else {
+      item.prev = this.tail;
       this.tail!.next = item;
     }
     this.length++;
@@ -89,6 +90,12 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
       throw 'IllegalStateException';
     }
     const item = new Node<T>(e);
+    if (this.head) {
+      this.head.prev = item;
+    } else {
+      this.tail = item;
+    }
+   
     item.next = this.head;
     this.head = item;
     this.length++;
@@ -100,7 +107,9 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
     }
     const item = new Node<T>(e);
     if (this.tail) {
+      item.prev = this.tail;
       this.tail.next = item;
+      this.tail = item;
     } else {
       this.head = item;
       this.tail = item;
@@ -138,6 +147,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
       this.tail = prev;
       prev!.next = null;
     }
+    this.length--;
     return item;
   }
 
@@ -186,12 +196,13 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
   }
 
   public get(index: number): T {
-    if (index < 0 || index > this.length) {
+    if (index < 0 || index >= this.length) {
       throw 'IndexOutOfBoundsException';
     }
     let i = 0, node = this.head;
     while (i < index) {
       node = node!.next;
+      i++;
     }
     return node!.item;
   }
@@ -215,11 +226,12 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
 
     if (this.tail === a) {
       this.tail.next = n;
+      n.prev = this.tail;
       this.tail = n;
     } else {
       n.next = a.next;
-      a.prev = n;
-      n.next = a;
+      a.next = n;
+      n.prev = a;
     }
     this.length++;
   }
@@ -230,6 +242,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
     }
     const item = n.item;
     if (n === this.head) {
+      this.head = n.next;
       n.prev = null;
       if (this.length === 1) {
         this.head = this.tail = null;
@@ -244,6 +257,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
       n.next = null;
       n.prev = null
     }
+    this.length--;
 
     return item;
   }
@@ -260,7 +274,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
       this.addLast(element);
     } else {
       let i = 0, node = this.head;
-      while (node && i < index) {
+      while (node && i < index -1) {
         node = node.next;
         i++;
       }
@@ -379,9 +393,12 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
     let node = this.head, index = 0;
     while (node && index < fromIndex) {
       node = node.next;
+      index++;
     }
     while (node && index < toIndex) {
       sublist.add(node.item);
+      node = node.next;
+      index++;
     }
     return sublist;
   }
