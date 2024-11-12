@@ -25,11 +25,11 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
   }
 
   protected isInsertionAllowed(): boolean {
-    return this.queue.length < this.maxLength;
+    return this.length < this.maxLength;
   }
 
   public size() {
-    return this.queue.length;
+    return this.length;
   }
 
   /**
@@ -143,13 +143,13 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
 
   public removeIf(filter: Function): boolean {
     const removeItemIndexs: number[] = [];
-    this.queue.forEach((item, index) => {
-      if (filter(item)) {
-        removeItemIndexs.push(index);
+    for(let i = this.length -1; i >=0; i--) {
+      if (filter(this.queue[i])) {
+        removeItemIndexs.push(i);
+        this.removeAt(i);
       }
-    });
-
-    removeItemIndexs.forEach(i => this.removeAt(i));
+    }
+  
     return removeItemIndexs.length > 0;
   }
 
@@ -158,8 +158,7 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
   }
 
   public toArray(): T[] {
-    // for deep copy ?? should we just use map?
-    return JSON.parse(JSON.stringify(this.queue));
+    return this.queue.slice(0, this.length).map(item => item as T).sort(this.comparator.compare.bind(this.comparator));
   }
 
   private removeAt(i: number) {
@@ -172,10 +171,10 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
       // last element make it null
       this.queue[i] = null;
     } else {
-      let moved: T = this.queue[i] as T;
+      let moved: T = this.queue[s] as T;
       this.queue[s] = null;
       this.siftDown(i, moved);
-      if (this.queue[i] == moved) {
+      if (this.queue[i] === moved) {
         this.siftUp(i, moved);
         if (this.queue[i] !== moved) {
           return moved;
@@ -216,10 +215,12 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
 
   public iterator(): Iterator<T> {
     let s = 0, current: T;
+    const queue = this.toArray();
+
     return ({
       next: () => {
-        if (s < this.queue.length) {
-          const item = this.queue[s++];
+        if (s < this.length) {
+          const item = queue[s++];
           if (item === null) {
             throw 'Unexpected null value';
           }
@@ -229,12 +230,13 @@ export class PriorityQueue<T> extends AbstractCollection<T> implements Queue<T>{
         }
         throw 'No more items';
       },
-      hasNext: () => s < this.queue.length,
+      hasNext: () => s < this.length,
       remove: () => {
-        if (s >= this.queue.length) {
+        if (s >= this.length) {
           throw 'Illegal operation';
         }
-        this.removeAt(s);
+        this.removeAt(this.indexOf(current));
+        
         return true;
       },
       current: () => current
